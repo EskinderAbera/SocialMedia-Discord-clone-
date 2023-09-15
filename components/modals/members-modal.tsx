@@ -1,5 +1,6 @@
 "use client";
 
+import qs from "query-string";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,8 @@ import {
   ShieldQuestion,
   Shield,
   Check,
+  Gavel,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -32,6 +35,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MemberRole } from "@prisma/client";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const roleIconMap = {
   GUEST: null,
@@ -40,11 +46,54 @@ const roleIconMap = {
 };
 
 export default function MembersModal() {
+  const router = useRouter();
   const { isOpen, onClose, type, data, onOpen } = useModal();
   const [loadingId, setLoadingId] = useState("");
 
   const isModalOpen = isOpen && type === "members";
   const { server } = data as { server: ServerWithMembersWithProfile };
+
+  const onKick = async (memberId: string) => {
+    try {
+      setLoadingId(memberId);
+      const url = qs.stringifyUrl({
+        url: `/api/members/${memberId}`,
+        query: {
+          serverId: server?.id,
+        },
+      });
+
+      const response = await axios.delete(url);
+      router.refresh();
+      onOpen("members", { server: response.data });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingId("");
+    }
+  };
+
+  const onRoleChange = async (memberId: string, role: MemberRole) => {
+    console.log(server.id);
+    try {
+      setLoadingId(memberId);
+      const url = qs.stringifyUrl({
+        url: `/api/members/${memberId}`,
+        query: {
+          serverId: server?.id,
+        },
+      });
+
+      const response = await axios.patch(url, { role });
+
+      router.refresh();
+      onOpen("members", { server: response.data });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingId("");
+    }
+  };
 
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>
@@ -70,7 +119,7 @@ export default function MembersModal() {
               </div>
               {server.profileId !== member.profileId &&
                 loadingId !== member.id && (
-                  <div className="ml-auto bg-red-500">
+                  <div className="ml-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger>
                         <MoreVertical className="h-4 w-4 text-zinc-500" />
@@ -84,7 +133,7 @@ export default function MembersModal() {
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
                               <DropdownMenuItem
-                              // onClick={() => onRoleChange(member.id, "GUEST")}
+                                onClick={() => onRoleChange(member.id, "GUEST")}
                               >
                                 <Shield className="h-4 w-4 mr-2" />
                                 Guest
@@ -92,7 +141,7 @@ export default function MembersModal() {
                                   <Check className="h-4 w-4 ml-auto" />
                                 )}
                               </DropdownMenuItem>
-                              {/* <DropdownMenuItem
+                              <DropdownMenuItem
                                 onClick={() =>
                                   onRoleChange(member.id, "MODERATOR")
                                 }
@@ -102,22 +151,22 @@ export default function MembersModal() {
                                 {member.role === "MODERATOR" && (
                                   <Check className="h-4 w-4 ml-auto" />
                                 )}
-                              </DropdownMenuItem> */}
+                              </DropdownMenuItem>
                             </DropdownMenuSubContent>
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
                         <DropdownMenuSeparator />
-                        {/* <DropdownMenuItem onClick={() => onKick(member.id)}>
+                        <DropdownMenuItem onClick={() => onKick(member.id)}>
                           <Gavel className="h-4 w-4 mr-2" />
                           Kick
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 )}
-              {/* {loadingId === member.id && (
+              {loadingId === member.id && (
                 <Loader2 className="animate-spin text-zinc-500 ml-auto w-4 h-4" />
-              )} */}
+              )}
             </div>
           ))}
         </ScrollArea>
