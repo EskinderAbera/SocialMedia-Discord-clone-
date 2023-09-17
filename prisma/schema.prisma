@@ -14,28 +14,29 @@ model Profile {
   name String
   imageUrl String @db.Text
   email String @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   servers Server[]
   members Member[]
   channels Channel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Server {
   id String @id @default(uuid())
-  name String 
+  name String
   imageUrl String @db.Text
   inviteCode String @unique
 
   profileId String
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   members Member[]
   channels Channel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([profileId])
 }
@@ -52,6 +53,7 @@ model Member {
 
   profileId String
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
   serverId String
   server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
@@ -76,7 +78,7 @@ enum ChannelType {
 
 model Channel {
   id String @id @default(uuid())
-  name String 
+  name String
   type ChannelType @default(TEXT)
 
   profileId String
@@ -92,7 +94,6 @@ model Channel {
 
   @@index([profileId])
   @@index([serverId])
-
 }
 
 model Message {
@@ -129,8 +130,7 @@ model Conversation {
 
   @@index([memberTwoId])
 
-  @@unique([memberOneId, memberTwoId]) // to make sure a converstion has a unique members
-
+  @@unique([memberOneId, memberTwoId])
 }
 
 model DirectMessage {
