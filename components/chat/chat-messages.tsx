@@ -10,6 +10,11 @@ import ChatItem from "./chat-item";
 import { useChatSocket } from "@/hooks/use-chat-socket";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { registerServiceWorker } from "@/lib/serviceWorker";
+import {
+  getCurrentPushSubscription,
+  sendPushSubscriptionToServer,
+} from "@/src/notifications/pushService";
+import PushMessageListener from "./push-message-listener";
 
 const DATE_FORMAT = "d MMM yyyy, HH:mm";
 
@@ -58,6 +63,20 @@ export default function ChatMessages({
       }
     }
     setUpServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    async function syncPushSubscription() {
+      try {
+        const subscription = await getCurrentPushSubscription();
+        if (subscription) {
+          await sendPushSubscriptionToServer(subscription);
+        }
+      } catch (error) {
+        console.log("syncing push subscription in chat-messages", error);
+      }
+    }
+    syncPushSubscription();
   }, []);
 
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage, status } =
@@ -138,6 +157,7 @@ export default function ChatMessages({
         ))}
       </div>
       <div ref={bottomRef} />
+      <PushMessageListener />
     </div>
   );
 }

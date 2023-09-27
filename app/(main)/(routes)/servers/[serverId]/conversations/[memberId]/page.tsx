@@ -85,6 +85,7 @@ export default async function MemberIdPage({
             apiUrl="/api/socket/direct-messages"
             query={{
               conversationId: conversation.id,
+              serverId: params.serverId,
             }}
           />
         </>
