@@ -15,6 +15,7 @@ export async function POST(req: Request) {
         "svix-timestamp": req.headers.get("svix-timestamp") || "",
       });
     } catch (error) {
+      console.log("what is the error", error);
       return NextResponse.json(
         {
           error: "webhook signature invalid",
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return NextResponse.json(
       {
         error: "Internal Server Error",

@@ -37,7 +37,7 @@ export default function ChatHeader({
         {notification && chatId && (
           <ChatNotificationButton channelId={chatId} />
         )}
-        <SocketIndicator />
+        {/* <SocketIndicator /> */}
       </div>
     </div>
   );
