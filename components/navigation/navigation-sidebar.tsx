@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { NavigationItem } from "@/components/navigation/navigation-item";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserButton } from "@clerk/nextjs";
+import { NotificationToggle } from "@/components/notification-toggle";
 
 export default async function NavigationSidebar() {
   const profile = await currentProfile();
@@ -42,6 +43,7 @@ export default async function NavigationSidebar() {
         ))}
       </ScrollArea>
       <div className="pb-3 mt-auto flex items-center flex-col gap-y-4">
+        <NotificationToggle />
         <ModeToggle />
         <UserButton
           afterSignOutUrl="/"

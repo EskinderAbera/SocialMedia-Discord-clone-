@@ -1,14 +1,20 @@
 "use client";
 
-import { Fragment, useRef, ElementRef } from "react";
+import { Fragment, useRef, ElementRef, useEffect } from "react";
 import { Member, Message, Profile } from "@prisma/client";
 import ChatWelcome from "./chat-welcome";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { useChatQuery } from "@/hooks/use-chat-query";
 import { Loader2, ServerCrash } from "lucide-react";
 import ChatItem from "./chat-item";
 import { useChatSocket } from "@/hooks/use-chat-socket";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
+import { registerServiceWorker } from "@/lib/serviceWorker";
+import {
+  getCurrentPushSubscription,
+  sendPushSubscriptionToServer,
+} from "@/src/notifications/pushService";
+import PushMessageListener from "./push-message-listener";
 
 const DATE_FORMAT = "d MMM yyyy, HH:mm";
 
@@ -47,6 +53,31 @@ export default function ChatMessages({
 
   const chatRef = useRef<ElementRef<"div">>(null);
   const bottomRef = useRef<ElementRef<"div">>(null);
+
+  useEffect(() => {
+    async function setUpServiceWorker() {
+      try {
+        await registerServiceWorker();
+      } catch (error) {
+        console.log("set up service worker in chat-message", error);
+      }
+    }
+    setUpServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    async function syncPushSubscription() {
+      try {
+        const subscription = await getCurrentPushSubscription();
+        if (subscription) {
+          await sendPushSubscriptionToServer(subscription);
+        }
+      } catch (error) {
+        console.log("syncing push subscription in chat-messages", error);
+      }
+    }
+    syncPushSubscription();
+  }, []);
 
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage, status } =
     useChatQuery({
@@ -126,6 +157,7 @@ export default function ChatMessages({
         ))}
       </div>
       <div ref={bottomRef} />
+      <PushMessageListener />
     </div>
   );
 }

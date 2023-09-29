@@ -3,6 +3,8 @@ import { NextApiRequest } from "next";
 import { NextApiResponseServerIO } from "@/types";
 import { currentProfilePages } from "@/lib/current-profile-pages";
 import { db } from "@/lib/db";
+import { clerkClient } from "@clerk/nextjs";
+import webPush, { WebPushError } from "web-push";
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,7 +17,7 @@ export default async function handler(
   try {
     const profile = await currentProfilePages(req);
     const { content, fileUrl } = req.body;
-    const { conversationId } = req.query;
+    const { conversationId, serverId } = req.query;
 
     if (!profile) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -87,6 +89,62 @@ export default async function handler(
         },
       },
     });
+
+    const recipientMember =
+      conversation.memberOne.profileId !== profile.id
+        ? conversation.memberOne
+        : conversation.memberTwo;
+
+    const recipient = await clerkClient.users.getUser(
+      recipientMember.profile.userId
+    );
+
+    console.log("got the user recipients", recipient);
+    console.log("the member Id", member.id);
+
+    const subscriptions = recipient.privateMetadata.subscriptions || [];
+
+    const pushPromises = subscriptions
+      .map((subscription) => {
+        return webPush
+          .sendNotification(
+            subscription,
+            JSON.stringify({
+              title: member.profile.name,
+              body: content,
+              icon: member.profile.imageUrl,
+              image: fileUrl || null,
+              channelId: member.id,
+              serverId: serverId,
+              memberId: member.id,
+            }),
+            {
+              vapidDetails: {
+                subject: "mailto:addis@coop.com",
+                publicKey: process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY || "",
+                privateKey: process.env.WEB_PUSH_PRIVATE_KEY || "",
+              },
+            }
+          )
+          .catch((error) => {
+            console.error("Error sending the push notification", error);
+            if (error instanceof WebPushError && error.statusCode === 410) {
+              console.error("Push subscription has expired, deleting...");
+
+              clerkClient.users.updateUser(recipient.id, {
+                privateMetadata: {
+                  subscriptions:
+                    recipient.privateMetadata.subscriptions?.filter(
+                      (s) => s.endpoint !== subscription.endpoint
+                    ),
+                },
+              });
+            }
+          });
+      })
+      .flat();
+
+    await Promise.all(pushPromises);
 
     const channelKey = `chat:${conversationId}:messages`;
 

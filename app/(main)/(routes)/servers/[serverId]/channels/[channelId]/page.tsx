@@ -45,6 +45,8 @@ export default async function ChannelIdPage({ params }: ChannelIdPageProps) {
         type="channel"
         serverId={channel.serverId}
         name={channel.name}
+        notification={true}
+        chatId={channel.id}
       />
       {channel.type === ChannelType.TEXT && (
         <>

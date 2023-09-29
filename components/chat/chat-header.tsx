@@ -1,14 +1,17 @@
-import { Hash, Menu } from "lucide-react";
+import { Hash } from "lucide-react";
 import MobileToggle from "@/components/mobile-toggle";
 import UserAvatar from "@/components/user-avatar";
 import SocketIndicator from "@/components/socket-indicator";
 import { ChatVideoButton } from "./chat-video-button";
+import { ChatNotificationButton } from "./chat-notification-button";
 
 interface ChatHeaderProps {
   serverId: string;
   name: string;
   type: "channel" | "conversation";
   imageUrl?: string;
+  notification?: boolean;
+  chatId?: string;
 }
 
 export default function ChatHeader({
@@ -16,6 +19,8 @@ export default function ChatHeader({
   name,
   type,
   imageUrl,
+  notification,
+  chatId,
 }: ChatHeaderProps) {
   return (
     <div className="text-md font-semibold px-3 flex items-center h-12 border-neutral-200 dark:border-neutral-800 border-b-2">
@@ -29,7 +34,10 @@ export default function ChatHeader({
       <p className="font-semibold text-md text-black dark:text-white">{name}</p>
       <div className="ml-auto flex items-center">
         {type === "conversation" && <ChatVideoButton />}
-        <SocketIndicator />
+        {notification && chatId && (
+          <ChatNotificationButton channelId={chatId} />
+        )}
+        {/* <SocketIndicator /> */}
       </div>
     </div>
   );
